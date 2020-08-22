@@ -3,22 +3,9 @@ import * as fs from "fs";
 import * as readline from "readline";
 import { FunctionDeclaration } from "typescript/lib/tsserverlibrary";
 import { DumpNodeVisitor, FindNodeVisitor } from "./visitors";
+import { StatsRecord } from "./stats_record";
+import { FunctionInfo } from "./function_info";
 
-class StatsRecord
-{
-	clazz: string;
-	func: string;
-	ret: string;
-	args: string[];
-
-	constructor(clazz: string, func: string, ret: string, args: string[])
-	{
-		this.clazz = clazz;
-		this.func = func;
-		this.ret = ret;
-		this.args = args;
-	}
-}
 
 export class Refactor
 {
@@ -207,51 +194,16 @@ export class Refactor
 	}
 
 	private getStatement(fileName: string, def: ts.DefinitionInfo, record: StatsRecord)
+		: string | undefined
 	{
-		let args = this.getArgumentList(fileName, def, record);
-		let result = `function ${record.func}(${args}): ${record.ret}`;
-		return result;
-	}
-
-	private getArgumentList(fileName: string, func: ts.DefinitionInfo, stats: StatsRecord): string
-	{
-		this.logger.info(`${ts.SyntaxKind.FunctionDeclaration}`);
-
 		const program = this.ls.getProgram();
 		const source = program.getSourceFile(fileName);
-		this.logger.info(`${fileName}=\n${source.text}`);
-		this.logger.info(`sourcefile: childCount = ${source.getChildCount()}`);
-		for (const element of source.getChildren()) {
-			this.logger.info(`childNode: ${element.kind}`);
-		}
-
+		
 		this.visitNodes(source);
-		const node = this.findNode(source, func.textSpan.start);
 
-		this.logger.info(`AST node is ${node.kind}`);
-
-		let func_node = node as FunctionDeclaration;
-		if (func_node.kind == ts.SyntaxKind.FunctionDeclaration)
-		{
-			return this.parametersToString(func_node.parameters, stats);
-		}
-
-		let method_node = node as ts.MethodSignature;
-		if (method_node.kind == ts.SyntaxKind.MethodSignature)
-		{
-			return this.parametersToString(method_node.parameters, stats);
-		}
-
-		return stats.args.map((value, index) => `arg${index}: ${value}`).join(", ");
-	}
-
-	private parametersToString(parameters: ts.NodeArray<ts.ParameterDeclaration>,
-		stats: StatsRecord): string
-	{
-		return parameters
-			.map((value, index) => `${value.name.getText()}: ${stats.args[index]}`)
-			.join(", ");
-	}
+		return this.findNode(source, def.textSpan.start)
+			?.getStatement(record);
+	}	
 
 	private visitNodes(sourceFile: ts.SourceFile): void
 	{
@@ -259,46 +211,9 @@ export class Refactor
 		visitor.visit(sourceFile);
 	}
 
-	private findNode(sourceFile: ts.SourceFile, position: number): ts.Node | undefined
+	private findNode(sourceFile: ts.SourceFile, position: number): FunctionInfo | undefined
 	{
 		let visitor = new FindNodeVisitor(position);
 		return visitor.visit(sourceFile);
-	}
-}
-
-/* FunctionDeclaration/MethodSignature
-* パラメータを取れるという点が同じ
-* SyntaxKindが異なる
-* Nodeの型が異なる
-* 生成するステートメントが異なる
-*
-* 必要そうな型：
-* interface TypedefStatement
-* class FunctionTypedefStatement extends TypedefStatement
-* class MethodTypedefStatement extends TypedefStatement
-* class TypedefStatementFactory
-*/
-
-class FunctionStatement
-{
-	node: ts.FunctionDeclaration;
-
-	constructor(node: ts.FunctionDeclaration)
-	{
-		this.node = node;
-	}
-
-	public getStatement(record: StatsRecord)
-	{
-		let args = this.parametersToString(record);
-		let result = `function ${record.func}(${args}): ${record.ret}`;
-		return result;
-	}
-
-	private parametersToString(stats: StatsRecord): string
-	{
-		return this.node.parameters
-			.map((value, index) => `${value.name.getText()}: ${stats.args[index]}`)
-			.join(", ");
 	}
 }

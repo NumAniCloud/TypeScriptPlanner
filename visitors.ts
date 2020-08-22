@@ -1,4 +1,5 @@
 import * as ts from "typescript/lib/tsserverlibrary";
+import * as funinf from "./function_info";
 
 class NodeVisitor<T>
 {
@@ -29,7 +30,7 @@ export class DumpNodeVisitor extends NodeVisitor<undefined>
 	public visit(node: ts.Node): undefined
 	{
 		let header = this.indent.join("");
-		this.logger.info(header + `node.kind:${node.kind}, ${node.getText()}\n${node.getFullText()}`);
+		this.logger.info(header + `node.kind:${node.kind}, ${node.getFullText()}`);
 		this.indent.push("→");
 
 		let result = super.visit(node);
@@ -42,7 +43,7 @@ export class DumpNodeVisitor extends NodeVisitor<undefined>
 	}
 }
 
-export class FindNodeVisitor extends NodeVisitor<ts.Node>
+export class FindNodeVisitor extends NodeVisitor<funinf.FunctionInfo>
 {
 	position: number;
 
@@ -52,7 +53,7 @@ export class FindNodeVisitor extends NodeVisitor<ts.Node>
 		this.position = position;
 	}
 
-	public visit(node: ts.Node): ts.Node | undefined
+	public visit(node: ts.Node): funinf.FunctionInfo | undefined
 	{
 		if (this.position < node.getStart() || this.position > node.getEnd())
 		{
@@ -63,12 +64,8 @@ export class FindNodeVisitor extends NodeVisitor<ts.Node>
 		if (result)
 		{
 			return result;
-		}
-
-		if (node.kind == ts.SyntaxKind.FunctionDeclaration
-			|| node.kind == ts.SyntaxKind.MethodSignature)
-		{
-			return node;
-		}
+        }
+        
+        return funinf.FunctionInfoFactory.create(node);
 	}
 }
