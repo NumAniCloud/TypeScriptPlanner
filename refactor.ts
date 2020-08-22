@@ -2,6 +2,7 @@ import * as ts from "typescript/lib/tsserverlibrary";
 import * as fs from "fs";
 import * as readline from "readline";
 import { FunctionDeclaration } from "typescript/lib/tsserverlibrary";
+import { DumpNodeVisitor, FindNodeVisitor } from "./visitors";
 
 class StatsRecord
 {
@@ -252,160 +253,16 @@ export class Refactor
 			.join(", ");
 	}
 
-	private lookupNodes<T>(node: ts.Node,
-		before?: (n: ts.Node) => T | undefined,
-		after?: (n: ts.Node) => T | undefined): T | undefined
-	{
-		if (before)
-		{
-			let before_result = before(node);
-			if (before_result)
-			{
-				return before_result;
-			}
-		}
-
-		for (const child of node.getChildren())
-		{
-			let result = this.lookupNodes(child, before, after);
-			if (result)
-			{
-				return result;
-			}
-		}
-
-		if (after)
-		{
-			let after_result = after(node);
-			if (after_result)
-			{
-				return after_result;
-			}
-		}
-	}
-
 	private visitNodes(sourceFile: ts.SourceFile): void
 	{
-		let logger = this.logger;
-		let indent: Array<String> = [];
-
-		function visit(node: ts.Node): void
-		{
-			indent.push("→");
-			let header = indent.join("");
-
-			logger.info(header + `node.kind:${node.kind}, ${node.getText()}\n${node.getFullText()}\nparameters=${(<FunctionDeclaration>node).parameters}`);
-
-			for (const child of node.getChildren())
-			{
-				visit(child);
-			}
-
-			indent.pop();
-		}
-
-		let visitor = new DumpNodeVisitor(logger);
+		let visitor = new DumpNodeVisitor(this.logger);
 		visitor.visit(sourceFile);
 	}
 
 	private findNode(sourceFile: ts.SourceFile, position: number): ts.Node | undefined
 	{
-		function find(node: ts.Node): ts.Node | undefined
-		{
-			if (position >= node.getStart() && position < node.getEnd())
-			{
-				for (const child of node.getChildren())
-				{
-					let result = find(child);
-					if (result)
-					{
-						return result;
-					}
-				}
-				if (node.kind == ts.SyntaxKind.FunctionDeclaration
-					|| node.kind == ts.SyntaxKind.MethodSignature)
-				{
-					return node;
-				}
-			}
-			return undefined;
-		}
-
 		let visitor = new FindNodeVisitor(position);
 		return visitor.visit(sourceFile);
-	}
-}
-
-class NodeVisitor<T>
-{
-	public visit(node: ts.Node): T | undefined
-	{
-		for (const child of node.getChildren())
-		{
-			let result = this.visit(child);
-			if (result)
-			{
-				return result;
-			}
-		}
-	}
-}
-
-class DumpNodeVisitor extends NodeVisitor<undefined>
-{
-	indent: Array<string> = [];
-	logger: ts.server.Logger;
-
-	constructor(logger: ts.server.Logger)
-	{
-		super();
-		this.logger = logger;
-	}
-
-	public visit(node: ts.Node): undefined
-	{
-		let header = this.indent.join("");
-		this.logger.info(header + `node.kind:${node.kind}, ${node.getText()}\n${node.getFullText()}`);
-		this.indent.push("→");
-
-		let result = super.visit(node);
-		if (result)
-		{
-			return result;
-		}
-
-		this.indent.pop();
-	}
-}
-
-class FindNodeVisitor extends NodeVisitor<ts.Node>
-{
-	position: number;
-
-	constructor(position: number)
-	{
-		super();
-		this.position = position;
-	}
-
-	public visit(node: ts.Node): ts.Node | undefined
-	{
-		if (this.position < node.getStart() || this.position > node.getEnd())
-		{
-			return undefined;
-		}
-
-		let result = super.visit(node);
-		if (result)
-		{
-			return result;
-		}
-
-		if (node.kind == ts.SyntaxKind.FunctionDeclaration
-			|| node.kind == ts.SyntaxKind.MethodSignature)
-		{
-			return node;
-		}
 	}
 }
 
