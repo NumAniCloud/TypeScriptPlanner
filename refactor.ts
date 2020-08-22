@@ -2,39 +2,27 @@ import * as ts from "typescript/lib/tsserverlibrary";
 import * as fs from "fs";
 import * as readline from "readline";
 import { DumpNodeVisitor, FindNodeVisitor } from "./visitors";
-import { StatsRecord } from "./stats_record";
+import { StatsRecord, StatsRecordRepo } from "./stats_record";
 import { FunctionInfo } from "./function_info";
-
 
 export class Refactor
 {
+	readonly statsPath: "D:/Naohiro/Documents/Repos2/Tools/TypeScriptPlanner/stats.csv";
 	ls: ts.LanguageService;
 	logger: ts.server.Logger;
-	records?: Array<StatsRecord>;
+	_records?: Array<StatsRecord>;
+	recordRepo: StatsRecordRepo;
 
 	public constructor(ls: ts.LanguageService, logger: ts.server.Logger)
 	{
 		this.ls = ls;
 		this.logger = logger;
+		this.recordRepo = new StatsRecordRepo(this.statsPath);
 	}
 
 	public loadStats()
 	{
-		const filePath = "D:/Naohiro/Documents/Repos2/Tools/TypeScriptPlanner/stats.csv";
-
-		try
-		{
-			fs.statSync(filePath);
-		}
-		catch (error)
-		{
-			if (error.code == "ENOENT")
-			{
-				console.log(filePath + " が存在しません。");
-			}
-		}
-
-		this.records = this.loadRecords(filePath);
+		this.recordRepo.loadStats();
 	}
 
 	private loadRecords(filePath: string)
@@ -80,19 +68,12 @@ export class Refactor
 	private getSubjectDefinition(definitions: readonly ts.DefinitionInfo[])
 		: ts.DefinitionInfo | undefined
 	{
-		if (this.records === null)
-		{
-			return undefined;
-		}
-
 		return definitions
-			.filter((value, index, obj) => value.kind == ts.ScriptElementKind.functionElement
+			.filter((value) => value.kind == ts.ScriptElementKind.functionElement
 				|| value.kind == ts.ScriptElementKind.memberFunctionElement)
-			.find((value, index, obj) =>
+			.find((value) =>
 			{
-				this.logger.info(`Comparing ${value.containerName}.${value.name}`);
-				return this.records.find((v, i, o) => v.clazz == value.containerName)
-					&& this.records.find((v, i, o) => v.func == value.name);
+				return this.recordRepo.findMatch(value);
 			});
 	}
 
@@ -100,11 +81,11 @@ export class Refactor
 	{
 		return {
 			name: "Load type definition from stats file",
-			description: "",
+			description: "Load type definition from stats file",
 			actions: [
 				{
 					name: "Load type definition from stats file",
-					description: "",
+					description: "Load type definition from stats file",
 				}
 			]
 		};
@@ -113,17 +94,7 @@ export class Refactor
 	private getSubjectRecord(definition: ts.DefinitionInfo)
 		: StatsRecord | undefined
 	{
-		if (this.records === null)
-		{
-			return undefined;
-		}
-
-		return this.records
-			.find((value) =>
-			{
-				return definition.name == value.func
-					&& definition.containerName == value.clazz;
-			});
+		return this.recordRepo.findMatch(definition);
 	}
 
 	private ensureNumber(position: number | ts.TextRange): number
