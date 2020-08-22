@@ -13,7 +13,7 @@ export class StatsRecord
 	{
 		this.clazz = clazz;
 		this.func = func;
-		this.ret = ret;
+		this.ret = ret === "undefined" ? "void" : ret;
 		this.args = args;
 	}
 }
@@ -30,21 +30,19 @@ export class StatsRecordRepo
 
 	public loadStats()
 	{
-		const filePath = "D:/Naohiro/Documents/Repos2/Tools/TypeScriptPlanner/stats.csv";
-
 		try
 		{
-			fs.statSync(filePath);
+			fs.statSync(this.statsFilePath);
 		}
 		catch (error)
 		{
 			if (error.code == "ENOENT")
 			{
-				console.log(filePath + " が存在しません。");
+				console.log(this.statsFilePath + " が存在しません。");
 			}
 		}
 
-		this.records = this.loadRecords(filePath);
+		this.records = this.loadRecords(this.statsFilePath);
 	}
 	
 	private loadRecords(filePath: string)
@@ -60,6 +58,21 @@ export class StatsRecordRepo
 			records.push(new StatsRecord(elements[1], elements[2], elements[3], args));
 		});
 		return records;
+	}
+
+	public filterMatch(definition: ts.DefinitionInfo): readonly StatsRecord[] | undefined
+	{
+		if (this.records === null)
+		{
+			return undefined;
+		}
+		
+		return this.records
+			.filter((value) =>
+			{
+				return definition.name == value.func
+					&& definition.containerName == value.clazz;
+			});
 	}
 	
 	public findMatch(definition: ts.DefinitionInfo): StatsRecord | undefined

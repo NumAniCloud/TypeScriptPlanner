@@ -78,7 +78,26 @@ export class Refactor
 	private getSubjectRecord(definition: ts.DefinitionInfo)
 		: StatsRecord | undefined
 	{
-		return this.recordRepo.findMatch(definition);
+		let rs = this.recordRepo.filterMatch(definition);
+		if (!rs)
+		{
+			return undefined;
+		}
+
+		let max = 0;
+		let result = rs[0];
+		for (const element of rs)
+		{
+			let value = element.args.length
+				- element.args.filter(x => x === "undefined").length;
+			if (value > max)
+			{
+				max = value;
+				result = element;
+			}
+		}
+
+		return result;
 	}
 
 	private getStatement(fileName: string, def: ts.DefinitionInfo, record: StatsRecord)
@@ -135,9 +154,6 @@ export class Refactor
 		return definitions
 			.filter((value) => value.kind == ts.ScriptElementKind.functionElement
 				|| value.kind == ts.ScriptElementKind.memberFunctionElement)
-			.find((value) =>
-			{
-				return this.recordRepo.findMatch(value);
-			});
+			.find((value) => this.recordRepo.findMatch(value));
 	}
 }
