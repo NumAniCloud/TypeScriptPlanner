@@ -1,19 +1,6 @@
 import * as ts from "typescript/lib/tsserverlibrary";
 import { StatsRecord } from "./stats_record";
 
-/* FunctionDeclaration/MethodSignature
-* パラメータを取れるという点が同じ
-* SyntaxKindが異なる
-* Nodeの型が異なる
-* 生成するステートメントが異なる
-*
-* 必要そうな型：
-* interface TypedefStatement
-* class FunctionTypedefStatement extends TypedefStatement
-* class MethodTypedefStatement extends TypedefStatement
-* class TypedefStatementFactory
-*/
-
 export interface FunctionInfo
 {
 	getStatement(record: StatsRecord): string;
