@@ -36,7 +36,7 @@ class FunctionStatement implements FunctionInfo
 	public getStatement(record: StatsRecord): string
 	{
 		let args = this.parametersToString(record);
-		let result = `function ${record.func}(${args}): ${record.ret}`;
+		let result = `function ${record.func}(${args}): ${record.ret};`;
 		return result;
 	}
 
@@ -60,7 +60,7 @@ class MethodSignatureStatement implements FunctionInfo
 	public getStatement(record: StatsRecord): string
 	{
 		let args = this.parametersToString(record);
-		return `${record.func}(${args}): ${record.ret}`;
+		return `${record.func}(${args}): ${record.ret};`;
 	}
 
 	private parametersToString(stats: StatsRecord): string

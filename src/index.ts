@@ -15,7 +15,7 @@ function create (info: ts.server.PluginCreateInfo): ts.LanguageService
     info.project.projectService.logger.info("Creating typescript-planner.");
 
     const ls = info.languageService;
-    let refactor = new Refactor(ls, info.project.projectService.logger);
+    let refactor = new Refactor(ls, info);
     refactor.loadStats();
 
     const delegate = ls.getApplicableRefactors;

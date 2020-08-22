@@ -5,16 +5,22 @@ import { FunctionInfo } from "./function_info";
 
 export class Refactor
 {
-	private readonly statsPath: "D:/Naohiro/Documents/Repos2/Tools/TypeScriptPlanner/stats.csv";
 	private ls: ts.LanguageService;
 	private logger: ts.server.Logger;
 	private recordRepo: StatsRecordRepo;
 
-	public constructor(ls: ts.LanguageService, logger: ts.server.Logger)
+	public constructor(ls: ts.LanguageService, info: ts.server.PluginCreateInfo)
 	{
 		this.ls = ls;
-		this.logger = logger;
-		this.recordRepo = new StatsRecordRepo(this.statsPath);
+		this.logger = info.project.projectService.logger;
+
+		let statsPath = info.config.statsFilePath;
+		if (!statsPath)
+		{
+			throw new Error("Stats file path is not set. please specify in tsconfig.json.");
+		}
+
+		this.recordRepo = new StatsRecordRepo(statsPath);
 	}
 
 	public loadStats()
@@ -111,6 +117,7 @@ export class Refactor
 		const defs = this.ls.getDefinitionAtPosition(fileName, positionOrRange);
 		if (!defs)
 		{
+			this.logger.info(`Definition not found. fileName:${fileName}, position:${positionOrRange}`);
 			return null;
 		}
 
