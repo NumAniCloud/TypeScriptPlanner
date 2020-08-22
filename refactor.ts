@@ -1,7 +1,6 @@
 import * as ts from "typescript/lib/tsserverlibrary";
 import * as fs from "fs";
 import * as readline from "readline";
-import { FunctionDeclaration } from "typescript/lib/tsserverlibrary";
 import { DumpNodeVisitor, FindNodeVisitor } from "./visitors";
 import { StatsRecord } from "./stats_record";
 import { FunctionInfo } from "./function_info";
@@ -56,38 +55,14 @@ export class Refactor
 	public getApplicableRefactors(positionOrRange: number | ts.TextRange, fileName: string)
 		: ts.ApplicableRefactorInfo | null
 	{
-		if (this.records === null)
-		{
-			return null;
-		}
-
-		let defs = this.getDefinitions(fileName, positionOrRange);
-		if (!defs)
-		{
-			this.logger.info("Language service cannot find definition.")
-			return null;
-		}
-
-		let def = this.getSubjectDefinition(defs);
-		if (!def)
-		{
-			return null;
-		}
-
-		return this.makeRefactorInfo(def);
+		const position = this.ensureNumber(positionOrRange);
+		let def = this.getSubjectDefinitionXX(fileName, position);
+		return def && this.makeRefactorInfo(def);
 	}
 
-	private getDefinitions(fileName: string, positionOrRange: number | ts.TextRange)
+	private getDefinitions(fileName: string, positionOrRange: number)
 		: readonly ts.DefinitionInfo[] | null
 	{
-		if (!(typeof positionOrRange == "number"))
-		{
-			this.logger.info(`position is range; pos=${positionOrRange.pos}, end=${positionOrRange.end}`);
-			positionOrRange = positionOrRange.pos;
-		}
-
-		this.logger.info(`analyze ${fileName}, position ${positionOrRange}`);
-
 		let defs = this.ls.getDefinitionAtPosition(fileName, positionOrRange);
 		if (!defs)
 		{
@@ -105,6 +80,11 @@ export class Refactor
 	private getSubjectDefinition(definitions: readonly ts.DefinitionInfo[])
 		: ts.DefinitionInfo | undefined
 	{
+		if (this.records === null)
+		{
+			return undefined;
+		}
+
 		return definitions
 			.filter((value, index, obj) => value.kind == ts.ScriptElementKind.functionElement
 				|| value.kind == ts.ScriptElementKind.memberFunctionElement)
@@ -146,27 +126,28 @@ export class Refactor
 			});
 	}
 
+	private ensureNumber(position: number | ts.TextRange): number
+	{
+		if (!(typeof position == "number"))
+		{
+			return position.pos;
+		}
+		return position;
+	}
+
+	private getSubjectDefinitionXX(fileName: string, position: number): ts.DefinitionInfo
+	{
+		let defs = this.getDefinitions(fileName, position);
+		return defs && this.getSubjectDefinition(defs);
+	}
+
 	public getFileTextChanges(fileName: string, positionOrRange: number | ts.TextRange)
 		: ts.FileTextChanges | null
 	{
-		if (!(typeof positionOrRange == "number"))
-		{
-			positionOrRange = positionOrRange.pos;
-		}
+		let position = this.ensureNumber(positionOrRange);
 
-		let defs = this.getDefinitions(fileName, positionOrRange);
-		if (!defs)
-		{
-			return null;
-		}
-
-		let def = this.getSubjectDefinition(defs);
-		if (!def)
-		{
-			return null;
-		}
-
-		let record = this.getSubjectRecord(def);
+		let def = this.getSubjectDefinitionXX(fileName, position);
+		let record = def && this.getSubjectRecord(def);
 		if (!record)
 		{
 			return null;
@@ -176,14 +157,7 @@ export class Refactor
 		this.logger.info(`Context span: start=${def.contextSpan?.start}, length=${def.contextSpan?.length}`);
 
 		let result = this.getStatement(fileName, def, record);
-		let span = def.contextSpan;
-
-		if (!span)
-		{
-			span = def.textSpan;
-		}
-
-		this.logger.info(`Resulting definition; ${result}`);
+		let span = def.contextSpan ?? def.textSpan;
 
 		return {
 			fileName: fileName,
