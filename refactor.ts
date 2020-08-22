@@ -187,8 +187,7 @@ export class Refactor
 		this.logger.info(`Edit target range; start=${def.textSpan.start}, length=${def.textSpan.length}`);
 		this.logger.info(`Context span: start=${def.contextSpan?.start}, length=${def.contextSpan?.length}`);
 
-		let args = this.getArgumentList(fileName, def, record);
-		let result = `function ${record.func}(${args}): ${record.ret}`;
+		let result = this.getStatement(fileName, def, record);
 		let span = def.contextSpan;
 
 		if (!span)
@@ -204,6 +203,13 @@ export class Refactor
 				{ "span": span, "newText": result }
 			]
 		};
+	}
+
+	private getStatement(fileName: string, def: ts.DefinitionInfo, record: StatsRecord)
+	{
+		let args = this.getArgumentList(fileName, def, record);
+		let result = `function ${record.func}(${args}): ${record.ret}`;
+		return result;
 	}
 
 	private getArgumentList(fileName: string, func: ts.DefinitionInfo, stats: StatsRecord): string
@@ -246,6 +252,38 @@ export class Refactor
 			.join(", ");
 	}
 
+	private lookupNodes<T>(node: ts.Node,
+		before?: (n: ts.Node) => T | undefined,
+		after?: (n: ts.Node) => T | undefined): T | undefined
+	{
+		if (before)
+		{
+			let before_result = before(node);
+			if (before_result)
+			{
+				return before_result;
+			}
+		}
+
+		for (const child of node.getChildren())
+		{
+			let result = this.lookupNodes(child, before, after);
+			if (result)
+			{
+				return result;
+			}
+		}
+
+		if (after)
+		{
+			let after_result = after(node);
+			if (after_result)
+			{
+				return after_result;
+			}
+		}
+	}
+
 	private visitNodes(sourceFile: ts.SourceFile): void
 	{
 		let logger = this.logger;
@@ -266,7 +304,8 @@ export class Refactor
 			indent.pop();
 		}
 
-		visit(sourceFile);
+		let visitor = new DumpNodeVisitor(logger);
+		visitor.visit(sourceFile);
 	}
 
 	private findNode(sourceFile: ts.SourceFile, position: number): ts.Node | undefined
@@ -291,6 +330,118 @@ export class Refactor
 			}
 			return undefined;
 		}
-		return find(sourceFile);
+
+		let visitor = new FindNodeVisitor(position);
+		return visitor.visit(sourceFile);
+	}
+}
+
+class NodeVisitor<T>
+{
+	public visit(node: ts.Node): T | undefined
+	{
+		for (const child of node.getChildren())
+		{
+			let result = this.visit(child);
+			if (result)
+			{
+				return result;
+			}
+		}
+	}
+}
+
+class DumpNodeVisitor extends NodeVisitor<undefined>
+{
+	indent: Array<string> = [];
+	logger: ts.server.Logger;
+
+	constructor(logger: ts.server.Logger)
+	{
+		super();
+		this.logger = logger;
+	}
+
+	public visit(node: ts.Node): undefined
+	{
+		let header = this.indent.join("");
+		this.logger.info(header + `node.kind:${node.kind}, ${node.getText()}\n${node.getFullText()}`);
+		this.indent.push("→");
+
+		let result = super.visit(node);
+		if (result)
+		{
+			return result;
+		}
+
+		this.indent.pop();
+	}
+}
+
+class FindNodeVisitor extends NodeVisitor<ts.Node>
+{
+	position: number;
+
+	constructor(position: number)
+	{
+		super();
+		this.position = position;
+	}
+
+	public visit(node: ts.Node): ts.Node | undefined
+	{
+		if (this.position < node.getStart() || this.position > node.getEnd())
+		{
+			return undefined;
+		}
+
+		let result = super.visit(node);
+		if (result)
+		{
+			return result;
+		}
+
+		if (node.kind == ts.SyntaxKind.FunctionDeclaration
+			|| node.kind == ts.SyntaxKind.MethodSignature)
+		{
+			return node;
+		}
+	}
+}
+
+/* FunctionDeclaration/MethodSignature
+* パラメータを取れるという点が同じ
+* SyntaxKindが異なる
+* Nodeの型が異なる
+* 生成するステートメントが異なる
+*
+* 必要そうな型：
+* interface TypedefStatement
+* class FunctionTypedefStatement extends TypedefStatement
+* class MethodTypedefStatement extends TypedefStatement
+* class TypedefStatementFactory
+*/
+
+class FunctionStatement
+{
+	node: ts.FunctionDeclaration;
+
+	constructor(node: ts.FunctionDeclaration)
+	{
+		this.node = node;
+	}
+
+	public getStatement(record: StatsRecord)
+	{
+		let args = this.parametersToString(record);
+		let result = `function ${record.func}(${args}): ${record.ret}`;
+		return result;
+	}
+
+	private parametersToString(stats: StatsRecord): string
+	{
+		return this.node.parameters
+			.map((value, index) => `${value.name.getText()}: ${stats.args[index]}`)
+			.join(", ");
 	}
 }
