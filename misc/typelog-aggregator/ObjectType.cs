@@ -21,7 +21,8 @@ namespace typelog_aggregator
 
 		public override string ToString()
 		{
-			var props = Properties.Select(x => x.ToString());
+			var props = Properties.OrderBy(x => x.Name)
+				.Select(x => x.ToString());
 			var propsString = string.Join("\n", props);
             var methods = string.Join("\n", Methods);
 			return $"{methods}\n{Source}\n{{\n{propsString}\n}}";

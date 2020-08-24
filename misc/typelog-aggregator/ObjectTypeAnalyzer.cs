@@ -18,8 +18,8 @@ namespace typelog_aggregator
 			var result = new List<ObjectType>();
 			foreach (var record in records)
 			{
-				var splitted = record.Invocation.Split(",");
-				var tables = splitted.Where(x => Regex.IsMatch(x, @"{.+}"))
+				var tables = record.Args.Append(record.Return)
+                    .Where(x => Regex.IsMatch(x, @"{.+}"))
 					.Select(x => Regex.Matches(x, @"\{\s*((?<prop>\s*[\w<>]+\s*:\s*[\w<>]+\s*);?)+\s*\}"))
 					.Select(x =>
 					{
@@ -27,7 +27,7 @@ namespace typelog_aggregator
 							.Select(y => y.Value.Split(":"))
 							.Select(y => new ObjectType.Property(y[0].Trim(), y[1].Trim()));
 					})
-					.Select((x, i) => new ObjectType($"{splitted[0]}.{splitted[1]}:{i}", x.ToArray(), record.Invocation));
+					.Select((x, i) => new ObjectType($"{record.Method}:{i}", x.ToArray(), record.Invocation));
 				result.AddRange(tables);
 			}
 

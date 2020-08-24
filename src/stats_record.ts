@@ -90,20 +90,7 @@ export class StatsRecordRepo
 		let result = candidates[0];
 		for (const element of candidates)
 		{
-			let priority = 100;
-			this.logger.info(`return:${element.ret}`);
-			if (element.ret == "null" || element.ret == "Array" || element.ret == "undefined")
-			{
-				priority--;
-			}
-			for (const a of element.args)
-			{
-				this.logger.info(`argment:${a}:`);
-				if (a == "null" || a == "Array" || a == "undefined")
-				{
-					priority--;
-				}
-			}
+			let priority = this.calcPriority(element);
 			if (priority >= max)
 			{
 				max = priority;
@@ -116,6 +103,26 @@ export class StatsRecordRepo
 		return result;
 	}
 	
+	private calcPriority(element: StatsRecord)
+	{
+		let priority = 100;
+		function applyToPrority(typeName: string, kind: string, logger: ts.server.Logger)
+		{
+			logger.info(`${kind}:${typeName}`);
+			if (typeName == "null" || typeName == "Array" || typeName == "undefined")
+			{
+				priority--;
+			}
+		}
+
+		applyToPrority(element.ret, "return", this.logger);
+		for (const a of element.args)
+		{
+			applyToPrority(a, "argument", this.logger);
+		}
+		return priority;
+	}
+
 	public findMatch(definition: ts.DefinitionInfo): StatsRecord | undefined
 	{
 		if (this.records === null)

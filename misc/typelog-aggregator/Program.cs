@@ -6,21 +6,9 @@ using System.Text.RegularExpressions;
 
 namespace typelog_aggregator
 {
-	class Record
-	{
-		public Record(string invocation, int appearance)
-		{
-			Invocation = invocation.Trim(' ');
-			Appearance = appearance;
-		}
-
-		public string Invocation { get; }
-		public int Appearance { get; }
-	}
-
 	class Program
 	{
-		static List<Record> LoadRecords(string[] filePathes, Func<string, (int, string)> toRecord)
+		static Record[] LoadRecords(string[] filePathes, Func<string, (int, string)> toRecord)
 		{
 			Console.WriteLine($"{filePathes.Length}個のファイルを解析します");
 
@@ -56,17 +44,46 @@ namespace typelog_aggregator
 
 			Console.WriteLine();
 
-			return stats;           
+			return stats.ToArray();
 		}
 
-		static List<Record> LoadRecordsFromText()
+		static Record[] MergeRecords(Record[] records)
+		{
+			var result = new List<Record>();
+
+			foreach (var item in records)
+			{
+				var same_ = result.FirstOrDefault(x => x.Method == item.Method
+					&& x.Args.Count == item.Args.Count);
+
+				if (same_ is {})
+				{
+					for (int i = 0; i < item.Args.Count; i++)
+					{
+						if (item.Args[i] != same_.Args[i])
+						{
+							same_.SetArg(i, $"{same_.Args[i]}|{item.Args[i]}");
+						}
+					}
+					same_.Appearance += item.Appearance;
+				}
+				else
+				{
+					result.Add(item);
+				}
+			}
+
+			return result.OrderBy(x => x.Method).ToArray();
+		}
+
+		static Record[] LoadRecordsFromText()
 		{
 			var files = Directory.EnumerateFiles(Environment.CurrentDirectory, "*.txt", SearchOption.TopDirectoryOnly)
 				.ToArray();
 			return LoadRecords(files, line => (1, line));
 		}
 
-		static List<Record> LoadRecordFromCsv()
+		static Record[] LoadRecordFromCsv()
 		{
 			var files = Directory.EnumerateFiles(Environment.CurrentDirectory, "*.csv", SearchOption.TopDirectoryOnly)
 				.ToArray();
@@ -165,18 +182,16 @@ namespace typelog_aggregator
 				return;
 			}
 
-			List<Record> stats;
+			Record[] stats;
 			if (args[0] == "txt")
 			{
 				System.Console.WriteLine("テキストファイルから読み込みます");
 				stats = LoadRecordsFromText();
-				WriteStatsCsv(stats, "stats.csv");
 			}
 			else if(args[0] == "csv")
 			{
 				System.Console.WriteLine("csvファイルから読み込みます");
 				stats = LoadRecordFromCsv();
-				WriteStatsCsv(stats, "statsAgg.csv");
 			}
 			else
 			{
@@ -187,6 +202,9 @@ namespace typelog_aggregator
 
 			var types = ExtractObjectTypes(stats.ToArray());
 			WriteObjectTypes(types);
+				
+			var merged = MergeRecords(stats);
+			WriteStatsCsv(merged, "stats.csv");
 		}
 	}
 }
