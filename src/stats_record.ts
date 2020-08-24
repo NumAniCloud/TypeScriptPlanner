@@ -14,7 +14,7 @@ export class StatsRecord
 		this.clazz = clazz;
 		this.func = func;
 		this.ret = ret === "undefined" ? "void" : ret;
-		this.args = args;
+		this.args = args.filter(x => x != "");
 	}
 }
 
@@ -22,10 +22,12 @@ export class StatsRecordRepo
 {
 	statsFilePath: string;
 	records?: Array<StatsRecord>;
+	logger: ts.server.Logger;
 
-	constructor(statsFilePath: string)
+	constructor(statsFilePath: string, logger: ts.server.Logger)
 	{
 		this.statsFilePath = statsFilePath;
+		this.logger = logger;
 	}
 
 	public loadStats()
@@ -73,6 +75,45 @@ export class StatsRecordRepo
 				return definition.name == value.func
 					&& definition.containerName == value.clazz;
 			});
+	}
+
+	public findSubjectMatch(definition: ts.DefinitionInfo): StatsRecord | undefined
+	{
+		let candidates = this.filterMatch(definition);
+
+		if (candidates.length == 0)
+		{
+			return undefined;
+		}
+
+		let max = 0;
+		let result = candidates[0];
+		for (const element of candidates)
+		{
+			let priority = 100;
+			this.logger.info(`return:${element.ret}`);
+			if (element.ret == "null" || element.ret == "Array" || element.ret == "undefined")
+			{
+				priority--;
+			}
+			for (const a of element.args)
+			{
+				this.logger.info(`argment:${a}:`);
+				if (a == "null" || a == "Array" || a == "undefined")
+				{
+					priority--;
+				}
+			}
+			if (priority >= max)
+			{
+				max = priority;
+				result = element;
+				this.logger.info(`result updated`);
+			}
+			this.logger.info(`priority:${priority}`)
+		}
+
+		return result;
 	}
 	
 	public findMatch(definition: ts.DefinitionInfo): StatsRecord | undefined

@@ -20,7 +20,7 @@ export class Refactor
 			throw new Error("Stats file path is not set. please specify in tsconfig.json.");
 		}
 
-		this.recordRepo = new StatsRecordRepo(statsPath);
+		this.recordRepo = new StatsRecordRepo(statsPath, info.project.projectService.logger);
 	}
 
 	public loadStats()
@@ -58,6 +58,7 @@ export class Refactor
 		const record = def && this.getSubjectRecord(def);
 		if (!record)
 		{
+			this.logger.info(`Definition or record not found.`);
 			return null;
 		}
 
@@ -78,26 +79,7 @@ export class Refactor
 	private getSubjectRecord(definition: ts.DefinitionInfo)
 		: StatsRecord | undefined
 	{
-		let rs = this.recordRepo.filterMatch(definition);
-		if (!rs)
-		{
-			return undefined;
-		}
-
-		let max = 0;
-		let result = rs[0];
-		for (const element of rs)
-		{
-			let value = element.args.length
-				- element.args.filter(x => x === "undefined").length;
-			if (value > max)
-			{
-				max = value;
-				result = element;
-			}
-		}
-
-		return result;
+		return this.recordRepo.findSubjectMatch(definition);
 	}
 
 	private getStatement(fileName: string, def: ts.DefinitionInfo, record: StatsRecord)
@@ -127,7 +109,12 @@ export class Refactor
 	private getSubjectDefinition(fileName: string, position: number): ts.DefinitionInfo
 	{
 		const defs = this.getDefinitions(fileName, position);
-		return defs && this.findSubjectDefinition(defs);
+		const result = defs && this.findSubjectDefinition(defs);
+		if (!result)
+		{
+			this.logger.info("Subject definition not found.");
+		}
+		return result;
 	}
 	
 	private getDefinitions(fileName: string, positionOrRange: number)
