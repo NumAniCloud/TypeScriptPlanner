@@ -20,6 +20,11 @@ namespace TypeAggregator
 				while (!reader.EndOfStream)
 				{
 					var line = reader.ReadLine();
+					if (line is null)
+					{
+						break;
+					}
+
 					var (count, key) = toRecord(line);
 
 					if (records.ContainsKey(key))
@@ -52,19 +57,19 @@ namespace TypeAggregator
 
 			foreach (var item in records)
 			{
-				var same_ = result.FirstOrDefault(x => x.Method == item.Method
+				var same = result.FirstOrDefault(x => x.Method == item.Method
 					&& x.Args.Count == item.Args.Count);
 
-				if (same_ is {})
+				if (same is {})
 				{
-					for (int i = 0; i < item.Args.Count; i++)
+					for (var i = 0; i < item.Args.Count; i++)
 					{
-						if (item.Args[i] != same_.Args[i])
+						if (item.Args[i] != same.Args[i])
 						{
-							same_.SetArg(i, $"{same_.Args[i]}|{item.Args[i]}");
+							same.SetArg(i, $"{same.Args[i]}|{item.Args[i]}");
 						}
 					}
-					same_.Appearance += item.Appearance;
+					same.Appearance += item.Appearance;
 				}
 				else
 				{
@@ -105,7 +110,7 @@ namespace TypeAggregator
 			{
 				var ext = Path.GetExtension(filePath);
 				var fileName = Path.GetFileNameWithoutExtension(filePath);
-				for (int i = 0; i < 64; i++)
+				for (var i = 0; i < 64; i++)
 				{
 					var name = fileName + i;
 					if (!File.Exists(name + ext))
@@ -145,29 +150,6 @@ namespace TypeAggregator
 				writer.WriteLine(item.ToString());
 				writer.WriteLine();
 			}
-		}
-
-		private static void TestDistinct()
-		{
-			var obj = new []
-			{
-				new ObjectType.Property("hoge", "Object"),
-				new ObjectType.Property("hogeB", "string"),
-				new ObjectType.Property("hogeC", "string"),
-			};
-			var obj2 = new []
-			{
-				new ObjectType.Property("hoge", "Object"),
-				new ObjectType.Property("hogeB", "string"),
-				new ObjectType.Property("hogeC", "string"),
-			};
-
-			var objA = new ObjectType("hoge", obj, "");
-			var objB = new ObjectType("fuga", obj2, "");
-			var distinct = new []{ objA, objB }
-				.Distinct(new SequenceComparer());
-
-			Console.WriteLine($"distinct count = {distinct.Count()}");
 		}
 
 		private static void Main(string[] args)

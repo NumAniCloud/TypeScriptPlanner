@@ -3,30 +3,24 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30330.147
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "typelog-aggregator", "typelog-aggregator\typelog-aggregator.csproj", "{5577ECC3-67F9-448F-B1B6-80BAD9C97705}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeAggregator", "TypeAggregator\TypeAggregator.csproj", "{CAA12ADA-F5D9-4064-B15A-5B92C223CDAC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeAggregator.Test", "TypeAggregator.Test\TypeAggregator.Test.csproj", "{1363F285-8D90-4D16-AD68-018F14F3B1E1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Debug|x64.Build.0 = Debug|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Debug|x86.Build.0 = Debug|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Release|x64.ActiveCfg = Release|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Release|x64.Build.0 = Release|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Release|x86.ActiveCfg = Release|Any CPU
-		{5577ECC3-67F9-448F-B1B6-80BAD9C97705}.Release|x86.Build.0 = Release|Any CPU
+		{CAA12ADA-F5D9-4064-B15A-5B92C223CDAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAA12ADA-F5D9-4064-B15A-5B92C223CDAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAA12ADA-F5D9-4064-B15A-5B92C223CDAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAA12ADA-F5D9-4064-B15A-5B92C223CDAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1363F285-8D90-4D16-AD68-018F14F3B1E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1363F285-8D90-4D16-AD68-018F14F3B1E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1363F285-8D90-4D16-AD68-018F14F3B1E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1363F285-8D90-4D16-AD68-018F14F3B1E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
