@@ -2,55 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using TypeAggregator.Stats;
+using TypeAggregator.Stream;
+
+[assembly: InternalsVisibleTo("TypeAggregator.Test")]
 
 namespace TypeAggregator
 {
 	internal class Program
 	{
-		private static Record[] LoadRecords(string[] filePathes, Func<string, (int, string)> toRecord)
-		{
-			Console.WriteLine($"{filePathes.Length}個のファイルを解析します");
-
-			var records = new Dictionary<string, int>();
-			foreach (var path in filePathes)
-			{
-				using var file = File.OpenRead(path);
-				using var reader = new StreamReader(file);
-
-				while (!reader.EndOfStream)
-				{
-					var line = reader.ReadLine();
-					if (line is null)
-					{
-						break;
-					}
-
-					var (count, key) = toRecord(line);
-
-					if (records.ContainsKey(key))
-					{
-						records[key] += count;
-					}
-					else
-					{
-						records[key] = count;
-					}
-				}
-
-				Console.Write(".");
-			}
-
-			var stats = new List<Record>();
-			foreach (var r in records)
-			{
-				stats.Add(new Record(r.Key, r.Value));
-			}
-
-			Console.WriteLine();
-
-			return stats.ToArray();
-		}
-
 		private static Record[] MergeRecords(Record[] records)
 		{
 			var result = new List<Record>();
@@ -78,28 +40,6 @@ namespace TypeAggregator
 			}
 
 			return result.OrderBy(x => x.Method).ToArray();
-		}
-
-		private static Record[] LoadRecordsFromText()
-		{
-			var files = Directory.EnumerateFiles(Environment.CurrentDirectory, "*.txt", SearchOption.TopDirectoryOnly)
-				.ToArray();
-			return LoadRecords(files, line => (1, line));
-		}
-
-		private static Record[] LoadRecordFromCsv()
-		{
-			var files = Directory.EnumerateFiles(Environment.CurrentDirectory, "*.csv", SearchOption.TopDirectoryOnly)
-				.ToArray();
-			return LoadRecords(files, ExtractRecord);
-
-			static (int count, string key) ExtractRecord(string line)
-			{
-				var splitted = line.Split(",");
-				var count = int.Parse(splitted[0]);
-				var key = string.Join(",", splitted[1..]);
-				return (count, key);
-			}
 		}
 
 		private static void WriteStatsCsv(IEnumerable<Record> stats, string filePath)
@@ -152,29 +92,15 @@ namespace TypeAggregator
 			}
 		}
 
-		private static void Main(string[] args)
+		private static async Task Main(string[] args)
 		{
 			Console.WriteLine("# typelog-aggregator");
 
-			if (args.Length == 0)
-			{
-				Console.WriteLine("usage:");
-				Console.WriteLine("typelog-aggregator [txt|csv]");
-				return;
-			}
+			var recordLoader = new RecordLoader(new StandardReadLineStreamFactory(),
+				new StandardStatsFileLoader());
+			var stats = await recordLoader.LoadAsync(args);
 
-			Record[] stats;
-			if (args[0] == "txt")
-			{
-				Console.WriteLine("テキストファイルから読み込みます");
-				stats = LoadRecordsFromText();
-			}
-			else if(args[0] == "csv")
-			{
-				Console.WriteLine("csvファイルから読み込みます");
-				stats = LoadRecordFromCsv();
-			}
-			else
+			if (stats is null)
 			{
 				Console.WriteLine("usage:");
 				Console.WriteLine("typelog-aggregator [txt|csv]");
