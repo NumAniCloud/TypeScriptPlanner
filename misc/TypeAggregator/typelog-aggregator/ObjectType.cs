@@ -1,16 +1,15 @@
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace typelog_aggregator
+namespace TypeAggregator
 {
-	class ObjectType
+	internal class ObjectType
 	{
 		public ObjectType(string title, Property[] properties, string source)
 		{
-            Methods = new List<string>() { title };
+            Methods = new List<string> { title };
             Properties = properties;
             Source = source;
         }

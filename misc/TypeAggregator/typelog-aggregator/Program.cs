@@ -1,14 +1,13 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
-namespace typelog_aggregator
+namespace TypeAggregator
 {
-	class Program
+	internal class Program
 	{
-		static Record[] LoadRecords(string[] filePathes, Func<string, (int, string)> toRecord)
+		private static Record[] LoadRecords(string[] filePathes, Func<string, (int, string)> toRecord)
 		{
 			Console.WriteLine($"{filePathes.Length}個のファイルを解析します");
 
@@ -47,7 +46,7 @@ namespace typelog_aggregator
 			return stats.ToArray();
 		}
 
-		static Record[] MergeRecords(Record[] records)
+		private static Record[] MergeRecords(Record[] records)
 		{
 			var result = new List<Record>();
 
@@ -76,14 +75,14 @@ namespace typelog_aggregator
 			return result.OrderBy(x => x.Method).ToArray();
 		}
 
-		static Record[] LoadRecordsFromText()
+		private static Record[] LoadRecordsFromText()
 		{
 			var files = Directory.EnumerateFiles(Environment.CurrentDirectory, "*.txt", SearchOption.TopDirectoryOnly)
 				.ToArray();
 			return LoadRecords(files, line => (1, line));
 		}
 
-		static Record[] LoadRecordFromCsv()
+		private static Record[] LoadRecordFromCsv()
 		{
 			var files = Directory.EnumerateFiles(Environment.CurrentDirectory, "*.csv", SearchOption.TopDirectoryOnly)
 				.ToArray();
@@ -98,7 +97,7 @@ namespace typelog_aggregator
 			}
 		}
 
-		static void WriteStatsCsv(IEnumerable<Record> stats, string filePath)
+		private static void WriteStatsCsv(IEnumerable<Record> stats, string filePath)
 		{
 			Console.WriteLine("解析完了。出力中…");
 
@@ -128,16 +127,16 @@ namespace typelog_aggregator
 			Console.WriteLine("出力完了。");
 		}
 
-		static ObjectType[] ExtractObjectTypes(Record[] records)
+		private static ObjectType[] ExtractObjectTypes(Record[] records)
 		{
 			var analyzer = new ObjectTypeAnalyzer();
 			var ot = analyzer.LoadObjectTypes(records);
 			return analyzer.MergeObjectTypes(ot);
 		}
 
-		static void WriteObjectTypes(ObjectType[] objectTypes)
+		private static void WriteObjectTypes(ObjectType[] objectTypes)
 		{
-			System.Console.WriteLine("オブジェクト情報を出力中");
+			Console.WriteLine("オブジェクト情報を出力中");
 			using var file = File.OpenWrite("types.log");
 			using var writer = new StreamWriter(file);
 
@@ -148,7 +147,7 @@ namespace typelog_aggregator
 			}
 		}
 
-		static void TestDistinct()
+		private static void TestDistinct()
 		{
 			var obj = new []
 			{
@@ -168,35 +167,35 @@ namespace typelog_aggregator
 			var distinct = new []{ objA, objB }
 				.Distinct(new SequenceComparer());
 
-			System.Console.WriteLine($"distinct count = {distinct.Count()}");
+			Console.WriteLine($"distinct count = {distinct.Count()}");
 		}
 
-		static void Main(string[] args)
+		private static void Main(string[] args)
 		{
 			Console.WriteLine("# typelog-aggregator");
 
 			if (args.Length == 0)
 			{
-				System.Console.WriteLine("usage:");
-				System.Console.WriteLine("typelog-aggregator [txt|csv]");
+				Console.WriteLine("usage:");
+				Console.WriteLine("typelog-aggregator [txt|csv]");
 				return;
 			}
 
 			Record[] stats;
 			if (args[0] == "txt")
 			{
-				System.Console.WriteLine("テキストファイルから読み込みます");
+				Console.WriteLine("テキストファイルから読み込みます");
 				stats = LoadRecordsFromText();
 			}
 			else if(args[0] == "csv")
 			{
-				System.Console.WriteLine("csvファイルから読み込みます");
+				Console.WriteLine("csvファイルから読み込みます");
 				stats = LoadRecordFromCsv();
 			}
 			else
 			{
-				System.Console.WriteLine("usage:");
-				System.Console.WriteLine("typelog-aggregator [txt|csv]");
+				Console.WriteLine("usage:");
+				Console.WriteLine("typelog-aggregator [txt|csv]");
 				return;
 			}
 

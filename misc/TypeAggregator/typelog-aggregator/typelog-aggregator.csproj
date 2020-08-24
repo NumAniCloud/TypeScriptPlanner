@@ -3,7 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>typelog_aggregator</RootNamespace>
+    <RootNamespace>TypeAggregator</RootNamespace>
+    <AssemblyName>TypeAggregator</AssemblyName>
   </PropertyGroup>
 
 </Project>

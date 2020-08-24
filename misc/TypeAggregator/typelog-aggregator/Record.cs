@@ -1,9 +1,9 @@
 
 using System.Collections.Generic;
 
-namespace typelog_aggregator
+namespace TypeAggregator
 {
-	class Record
+	internal class Record
 	{
         private readonly string[] splitted;
 

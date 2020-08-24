@@ -2,15 +2,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace typelog_aggregator
+namespace TypeAggregator
 {
-    class SequenceComparer : IEqualityComparer<ObjectType>
+	internal class SequenceComparer : IEqualityComparer<ObjectType>
     {
-        public SequenceComparer()
-        {
-        }
-
-        public bool Equals([AllowNull] ObjectType x, [AllowNull] ObjectType y)
+		public bool Equals([AllowNull] ObjectType x, [AllowNull] ObjectType y)
         {
             if (x is null || y is null)
             {
